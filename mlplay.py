@@ -509,5 +509,5 @@ class RLPlay:
         3. **重要**：也要記得呼叫 rlplayRewardCalculator.reset()。
         """
         self.stagnation_timer = 0
-        # rlplayRewardCalculator.reset()
+        rlplayRewardCalculator.reset()
         pass
