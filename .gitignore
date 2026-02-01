@@ -4,3 +4,4 @@
 !models/
 !models/**
 !activate.py
+!rlplay_reward_calculator.py
