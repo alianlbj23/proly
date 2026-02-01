@@ -383,6 +383,7 @@ class RLPlay:
            - self.last_checkpoint: 紀錄上一次的檢查點，用來判斷有沒有在前進。
         """
         self.stagnation_timer = 0
+        self.last_checkpoint = 0
         pass
 
     def update(self):
@@ -408,19 +409,49 @@ class RLPlay:
         - total_reward (float): 這一幀的總分。
         - is_done (bool): 是否結束這回合。
         """
-        # 範例結構：
-        # 1. 計算各項分數
-        # checkpoint_reward = rlplayRewardCalculator.calculate_checkpoint_reward(...)
-        # distance_reward = rlplayRewardCalculator.calculate_distance_reward(...)
-        #
-        # 2. 加總
-        # total_reward = checkpoint_reward + distance_reward
-        #
-        # 3. 檢查是否卡住 (Anti-AFK)
-        # if 卡住太久:
-        #     return total_reward, True
+        obs = rlplayRewardCalculator.observation
 
-        return 0, False
+        # 1. 計算各項分數
+        checkpoint_reward = rlplayRewardCalculator.calculate_checkpoint_reward(weight=2.0)
+        distance_reward = rlplayRewardCalculator.calculate_distance_reward(close_weight=0.05, leave_weight=-0.05)
+        health_reward = rlplayRewardCalculator.calculate_health_reward(
+            death_weight=-2.0,
+            increase_weight=0.5,
+            decrease_weight=-0.5
+        )
+        hazard_reward = rlplayRewardCalculator.calculate_mud_reward(
+            threshold=1.5,
+            leave_weight=0.1,
+            close_weight=-0.2
+        )
+
+        # 2. 加總
+        total_reward = checkpoint_reward + distance_reward + health_reward + hazard_reward
+
+        # 3. 進度/卡住偵測 (Anti-AFK)
+        not_used_for_training = False
+        if obs is None:
+            return 0.0, True
+
+        if obs.get("is_respawning", False):
+            not_used_for_training = True
+
+        current_checkpoint = obs.get("last_checkpoint_index", None)
+        if current_checkpoint is not None and current_checkpoint > self.last_checkpoint:
+            self.last_checkpoint = current_checkpoint
+            self.stagnation_timer = 0
+        else:
+            self.stagnation_timer += 1
+
+        reached_final = obs.get("reached_final_checkpoint", False)
+
+        if self.stagnation_timer > 600:
+            return total_reward, True
+
+        if reached_final:
+            return total_reward, True
+
+        return total_reward, not_used_for_training
 
     def reset(self):
         """
