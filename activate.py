@@ -6,6 +6,8 @@ def main():
         sys.executable,   # current python interpreter
         "-m", "mlgame3d",
         "-i", "mlplay.py",
+        "-e", "10000",
+        "-gp", "audio", "false",
         # "-gp", "max_time", "5", # 5 minutes
         "proly.exe"
     ]
