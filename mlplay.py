@@ -419,6 +419,10 @@ class RLPlay:
             increase_weight=0.5,
             decrease_weight=-0.5
         )
+        water_reward = rlplayRewardCalculator.calculate_water_reward(
+            threshold=1.5,
+            close_weight=-1.0
+        )
         hazard_reward = rlplayRewardCalculator.calculate_mud_reward(
             threshold=1.5,
             leave_weight=0.1,
@@ -426,7 +430,7 @@ class RLPlay:
         )
 
         # 2. 加總
-        total_reward = checkpoint_reward + distance_reward + health_reward + hazard_reward
+        total_reward = checkpoint_reward + distance_reward + health_reward + water_reward + hazard_reward
 
         # 3. 進度/卡住偵測 (Anti-AFK)
         not_used_for_training = False

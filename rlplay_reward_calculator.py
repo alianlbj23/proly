@@ -176,3 +176,46 @@ class RlplayRewardCalculator:
         if is_close_hazard(prev_grid):
             return leave_weight
         return 0.0
+
+    def calculate_water_reward(self, threshold=0.0, close_weight=0.0):
+        """
+        [水坑避讓獎勵]
+        目標：強化對水坑的避讓行為（水坑=致命）。
+
+        1. 檢查車子前方 (例如 grid[3][2] 或 grid[4][2]) 是否有水坑 (terrain_type == -1)。
+        2. 若水坑很近，回傳 close_weight (通常是較大的負分)。
+        """
+        if self.observation is None:
+            return 0.0
+
+        grid = self.observation.get("terrain_grid", None)
+        if grid is None:
+            return 0.0
+
+        def get_terrain_type(cell):
+            if isinstance(cell, dict):
+                return cell.get("terrain_type", None)
+            return cell
+
+        def cell_distance(cell):
+            if isinstance(cell, dict):
+                rel = cell.get("relative_position", None)
+                if rel is None:
+                    return None
+                return float(np.linalg.norm(rel))
+            return None
+
+        try:
+            cells = [grid[3][2], grid[4][2]]
+            for cell in cells:
+                if get_terrain_type(cell) != -1:
+                    continue
+                if threshold <= 0.0:
+                    return close_weight
+                distance = cell_distance(cell)
+                if distance is None or distance <= threshold:
+                    return close_weight
+        except (TypeError, IndexError):
+            return 0.0
+
+        return 0.0
